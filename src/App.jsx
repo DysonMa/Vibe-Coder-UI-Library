@@ -106,8 +106,25 @@ function Demo({ pattern }) {
     const rect = area.getBoundingClientRect()
     const x = (event.clientX - rect.left) / rect.width - 0.5
     const y = (event.clientY - rect.top) / rect.height - 0.5
-    area.querySelector('i').style.transform = `translate(${x * 24}px,${y * 12}px)`
-    area.querySelector('b').style.transform = `translate(${x * -15}px,${y * -10}px)`
+    area.style.setProperty('--pointer-sky-x', `${x * -5}px`)
+    area.style.setProperty('--pointer-sky-y', `${y * -3}px`)
+    area.style.setProperty('--pointer-sun-x', `${x * -8}px`)
+    area.style.setProperty('--pointer-sun-y', `${y * -6}px`)
+    area.style.setProperty('--pointer-back-x', `${x * -7}px`)
+    area.style.setProperty('--pointer-back-y', `${y * -3}px`)
+    area.style.setProperty('--pointer-mid-x', `${x * -13}px`)
+    area.style.setProperty('--pointer-mid-y', `${y * -7}px`)
+    area.style.setProperty('--pointer-front-x', `${x * -21}px`)
+    area.style.setProperty('--pointer-front-y', `${y * -11}px`)
+    area.style.setProperty('--pointer-copy-x', `${x * 11}px`)
+    area.style.setProperty('--pointer-copy-y', `${y * 6}px`)
+  }
+
+  function resetParallaxPointer(event) {
+    const area = event.target.closest('[data-parallax]')
+    if (!area) return
+    ;['sky-x', 'sky-y', 'sun-x', 'sun-y', 'back-x', 'back-y', 'mid-x', 'mid-y', 'front-x', 'front-y', 'copy-x', 'copy-y']
+      .forEach((name) => area.style.setProperty(`--pointer-${name}`, '0px'))
   }
 
   function scrollDemo(event) {
@@ -117,22 +134,19 @@ function Demo({ pattern }) {
     const progress = Math.min(1, demo.scrollTop / max)
     const cube = demo.querySelector('.demo-cube')
     const trigger = demo.querySelector('.fade-item')
-    const parallax = demo.querySelector('.parallax-demo')
+    const parallax = demo.querySelector('.parallax-scene')
     const horizontal = demo.querySelector('.hscroll-demo')
     const indicator = demo.querySelector('.progress-demo')
     if (cube) cube.style.transform = `translateX(${progress * 230}px) rotate(${progress * 150}deg)`
     if (trigger) trigger.classList.toggle('entered', progress > 0.28)
     if (parallax) {
-      const title = parallax.querySelector('i')
-      const orb = parallax.querySelector('b')
-      parallax.style.setProperty('--ridge-back-y', `${progress * -24}px`)
-      parallax.style.setProperty('--ridge-front-y', `${progress * -52}px`)
-      if (title) title.style.transform = `translateY(${progress * -76}px)`
-      if (orb) orb.style.transform = `translate(${progress * 18}px, ${progress * 84}px) scale(${1 + progress * 0.12})`
-      const back = parallax.querySelector('.parallax-ridge-back')
-      const front = parallax.querySelector('.parallax-ridge-front')
-      if (back) back.style.transform = `translateY(${progress * -24}px)`
-      if (front) front.style.transform = `translateY(${progress * -52}px)`
+      parallax.style.setProperty('--scroll-sky-y', `${progress * -10}px`)
+      parallax.style.setProperty('--scroll-sun-x', `${progress * 8}px`)
+      parallax.style.setProperty('--scroll-sun-y', `${progress * 18}px`)
+      parallax.style.setProperty('--scroll-back-y', `${progress * -24}px`)
+      parallax.style.setProperty('--scroll-mid-y', `${progress * -48}px`)
+      parallax.style.setProperty('--scroll-front-y', `${progress * -78}px`)
+      parallax.style.setProperty('--scroll-copy-y', `${progress * -64}px`)
     }
     if (horizontal) {
       // Hold the first and last frames so vertical scrolling only drives the middle transition.
@@ -144,7 +158,7 @@ function Demo({ pattern }) {
 
   const showCallout = !['layout', 'navigation', 'style'].includes(pattern.category)
 
-  return <div ref={ref} className={`demo category-${pattern.category} ${pattern.category === 'scroll' ? 'scroll-demo' : ''}`} aria-label={`${pattern.name} 示範`} onClick={interact} onPointerMove={parallax} onScroll={scrollDemo}>
+  return <div ref={ref} className={`demo category-${pattern.category} ${pattern.category === 'scroll' ? 'scroll-demo' : ''}`} aria-label={`${pattern.name} 示範`} onClick={interact} onPointerMove={parallax} onPointerLeave={resetParallaxPointer} onScroll={scrollDemo}>
     {showCallout && <span className="demo-callout">動手試試看</span>}
     <div className="demo-inner" dangerouslySetInnerHTML={{ __html: demoHTML(pattern.demo) }} />
   </div>
@@ -221,7 +235,14 @@ function App() {
 
   function notify(text = '✓ 成功複製') { setToast(text); clearTimeout(notify.timer); notify.timer = setTimeout(() => setToast(''), 2200) }
   function copy(value) { copyText(value, () => notify()) }
-  function switchCategory(id) { setCategory(id); history.replaceState(null, '', `#${id}`); requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector('.pattern-grid .pattern-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))) }
+  function switchCategory(id) {
+    setCategory(id)
+    history.replaceState(null, '', `#${id}`)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+      document.querySelector('.library-toolbar')?.scrollIntoView({ behavior, block: 'start' })
+    }))
+  }
   function goPattern(pattern) { switchCategory(pattern.category); setCommandOpen(false); setTimeout(() => document.getElementById(pattern.id)?.scrollIntoView({ behavior:'smooth', block:'center' }), 30) }
   function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
